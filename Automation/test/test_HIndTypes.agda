@@ -54,7 +54,7 @@ module Circle1 where
 
   unquoteDecl recS* βbase* = generateβRec (vArg recS*)
                                      ((vArg βbase*) ∷ [])
-                                     (quote S₁) 0 S₁points
+                                     (quote S₁) 0 S₁points   -- the input 0 is the number of parameters for the type S₁
 
   {-# REWRITE βbase* #-}
 
