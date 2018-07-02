@@ -474,7 +474,7 @@ module IntervalOops where
   -- This is an issue with the technique as implemented. Pattern
   -- matching can still be used to prove disjointness of constructors.
   oops : start ≡ end → ⊥
-  oops ()
+  oops () -- it fails
 
   double-oops : ⊥
   double-oops = oops seg
