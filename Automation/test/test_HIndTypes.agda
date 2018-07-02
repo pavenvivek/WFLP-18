@@ -19,9 +19,11 @@ open import Automation.lib.generateHit
 open import Automation.lib.generateRecHit
 open import Automation.lib.generateIndHit
 open import Automation.lib.generateBetaRecHit
+open import Automation.lib.generateBetaRecHitRw
 open import Automation.lib.generateBetaRecHitPath using (generateβRecHitPath)
 open import Automation.lib.generateBetaRec
 open import Automation.lib.generateBetaIndHit
+open import Automation.lib.generateBetaIndHitRw
 open import Automation.lib.generateBetaIndHitPath using (generateβIndHitPath)
 open import Automation.lib.generateBetaInd
 open import Automation.utils.reflectionUtils
@@ -33,6 +35,104 @@ macro
   thm-prv : (C : Name) → Term → TC ⊤
   thm-prv C hole = bindTC (getType C)
                           (λ type → unify hole type)
+
+module Interval where
+
+  postulate
+    𝕀 : Set
+    start : 𝕀
+    end : 𝕀
+    seg : start ≡ end
+
+  𝕀points : List Name
+  𝕀points = ((quote start) ∷ (quote end) ∷ [])
+
+  𝕀paths : List Name
+  𝕀paths = ((quote seg) ∷ [])
+
+  unquoteDecl rec𝕀* βstart* βend* = generateβRec (vArg rec𝕀*)
+                                     ((vArg βstart*) ∷ (vArg βend*) ∷ [])
+                                     (quote 𝕀) 0 𝕀points
+
+  {-# REWRITE βstart* #-}
+  {-# REWRITE βend* #-}
+
+  unquoteDecl rec𝕀 = generateRecHit (vArg rec𝕀)
+                                    (quote 𝕀)
+                                    (quote rec𝕀*) 0 𝕀points 𝕀paths
+
+  thm15 : thm-prv rec𝕀 ≡ (𝕀 → (B : Set) → (st end : B) → (seg : st ≡ end) → B)
+  thm15 = refl
+
+  unquoteDecl βseg = generateβRecHitPath (quote rec𝕀)
+                                     ((vArg βseg) ∷ [])
+                                     (quote 𝕀)
+                                     (quote rec𝕀*) 0 𝕀points 𝕀paths
+
+  thm16 : thm-prv βseg ≡ ((B : Set) → (s e : B) → (sg : s ≡ e) → ap (λ x → rec𝕀 x B s e sg) seg ≡ sg)
+  thm16 = refl
+
+  unquoteDecl ind𝕀* iβstart* iβend* = generateβInd (vArg ind𝕀*)
+                                     ((vArg iβend*) ∷ (vArg iβstart*) ∷ [])
+                                     (quote 𝕀) 0 𝕀points
+
+  {-# REWRITE iβstart* #-}
+  {-# REWRITE iβend* #-}
+
+  unquoteDecl ind𝕀 = generateIndHit (vArg ind𝕀)
+                                    (quote 𝕀)
+                                    (quote ind𝕀*) 0 𝕀points 𝕀paths
+
+  thm17 : thm-prv ind𝕀 ≡ ((x : 𝕀) → (B : 𝕀 → Set) → (s : B start) → (e : B end) → (sg : (transport B seg s ≡ e)) → B x)
+  thm17 = refl
+
+  unquoteDecl iβseg = generateβIndHitPath (quote ind𝕀)
+                                     ((vArg iβseg) ∷ [])
+                                     (quote 𝕀)
+                                     (quote ind𝕀*) 0 𝕀points 𝕀paths
+
+  thm18 : thm-prv iβseg ≡ ((B : 𝕀 → Set) → (s : B start) → (e : B end) → (sg : transport B seg s ≡ e) →
+                            apd (λ x → ind𝕀 x B s e sg) seg ≡ sg)
+  thm18 = refl
+
+
+{-
+  The tool also has interfaces generateβRecHitRw and generateβIndHitRw which generates the computation rules as rewrite rules (example as follows).
+-}
+
+{-
+  postulate
+    recI' : (𝕀 → (B : Set) → (st end : B) → (seg : st ≡ end) → B)
+    Icmp : (x : 𝕀) → (B : Set) → (st end : B) → (seg : st ≡ end) → (recI' x B st end seg) ↦ (rec𝕀* x B st end)
+
+  {-# REWRITE Icmp #-}
+-}
+
+  unquoteDecl recI βcmp = generateβRecHitRw (vArg recI)
+                                     (vArg βcmp)
+                                     (quote 𝕀)
+                                     (quote rec𝕀*) 0 𝕀points 𝕀paths
+
+  {-# REWRITE βcmp #-}
+
+{-
+  postulate
+    indI' : (x : 𝕀) → (B : 𝕀 → Set) → (s : B start) → (e : B end) → (sg : (transport B seg s ≡ e)) → B x
+    Icmp' : (x : 𝕀) → (B : 𝕀 → Set) → (s : B start) → (e : B end) → (sg : (transport B seg s ≡ e)) → (indI' x B s e sg) ↦ (ind𝕀* x B s e)
+
+  {-# REWRITE Icmp' #-}
+-}
+
+  unquoteDecl indI iβcmp = generateβIndHitRw (vArg indI)
+                                     (vArg iβcmp)
+                                     (quote 𝕀)
+                                     (quote ind𝕀*) 0 𝕀points 𝕀paths
+
+  {-# REWRITE iβcmp #-}
+
+
+-- -------
+
 
 module Circle1 where
 
@@ -409,66 +509,7 @@ absurd' : {A : Set} → (a : A) → (N {A} ≡ S {A}) → ⊥
 absurd' {A} a ()
 -}
 
-
-module Interval where
-
-  postulate
-    𝕀 : Set
-    start : 𝕀
-    end : 𝕀
-    seg : start ≡ end
-
-  𝕀points : List Name
-  𝕀points = ((quote start) ∷ (quote end) ∷ [])
-
-  𝕀paths : List Name
-  𝕀paths = ((quote seg) ∷ [])
-
-  unquoteDecl rec𝕀* βstart* βend* = generateβRec (vArg rec𝕀*)
-                                     ((vArg βstart*) ∷ (vArg βend*) ∷ [])
-                                     (quote 𝕀) 0 𝕀points
-
-  {-# REWRITE βstart* #-}
-  {-# REWRITE βend* #-}
-
-  unquoteDecl rec𝕀 = generateRecHit (vArg rec𝕀)
-                                    (quote 𝕀)
-                                    (quote rec𝕀*) 0 𝕀points 𝕀paths
-
-  thm15 : thm-prv rec𝕀 ≡ (𝕀 → (B : Set) → (st end : B) → (seg : st ≡ end) → B)
-  thm15 = refl
-
-  unquoteDecl βseg = generateβRecHitPath (quote rec𝕀)
-                                     ((vArg βseg) ∷ [])
-                                     (quote 𝕀)
-                                     (quote rec𝕀*) 0 𝕀points 𝕀paths
-
-  thm16 : thm-prv βseg ≡ ((B : Set) → (s e : B) → (sg : s ≡ e) → ap (λ x → rec𝕀 x B s e sg) seg ≡ sg)
-  thm16 = refl
-
-  unquoteDecl ind𝕀* iβstart* iβend* = generateβInd (vArg ind𝕀*)
-                                     ((vArg iβend*) ∷ (vArg iβstart*) ∷ [])
-                                     (quote 𝕀) 0 𝕀points
-
-  {-# REWRITE iβstart* #-}
-  {-# REWRITE iβend* #-}
-
-  unquoteDecl ind𝕀 = generateIndHit (vArg ind𝕀)
-                                    (quote 𝕀)
-                                    (quote ind𝕀*) 0 𝕀points 𝕀paths
-
-  thm17 : thm-prv ind𝕀 ≡ ((x : 𝕀) → (B : 𝕀 → Set) → (s : B start) → (e : B end) → (sg : (transport B seg s ≡ e)) → B x)
-  thm17 = refl
-
-  unquoteDecl iβseg = generateβIndHitPath (quote ind𝕀)
-                                     ((vArg iβseg) ∷ [])
-                                     (quote 𝕀)
-                                     (quote ind𝕀*) 0 𝕀points 𝕀paths
-
-  thm18 : thm-prv iβseg ≡ ((B : 𝕀 → Set) → (s : B start) → (e : B end) → (sg : transport B seg s ≡ e) →
-                            apd (λ x → ind𝕀 x B s e sg) seg ≡ sg)
-  thm18 = refl
-
+{-
 module IntervalOops where
   open Interval
   -- This is an issue with the technique as implemented. Pattern
@@ -478,4 +519,4 @@ module IntervalOops where
 
   double-oops : ⊥
   double-oops = oops seg
-
+-}
