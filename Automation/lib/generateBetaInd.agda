@@ -132,7 +132,10 @@ getMapConstructorTypeInd2 Cref d cName pars inds args R mapTy ctype cns (def x l
         index ← (dropTC d lsargs)
         index' ← (updateArgs (inds ++L args) index)
         indexH ← (changeVisToHid index')
-        pure (var Cref (indexH ++L (vArg (def cName cargs) ∷ [])))
+        case! (isDefinition R) of λ
+         { true → pure (var Cref (indexH ++L (vArg (con cName cargs) ∷ [])))
+         ; false → pure (var Cref (indexH ++L (vArg (def cName cargs) ∷ [])))
+         }
      ; false →
        case (null lsargs) of λ
         { true → pure (def x [])
@@ -248,7 +251,7 @@ getMapConsTypeListInd R d Cref paths pars x y z = pure unknown
         argInfo' ← (getHidArgs' argInf)
         argArgs ← (generateRefTerm' argInfo' args)
         args' ← (pure ((argPars ++L argInds) ++L argArgs))
-        argIndRec ← (pure (def indRec (vArg (def Rpath []) ∷ argCons)))
+        -- argIndRec ← (pure (def indRec (vArg (con Rpath []) ∷ argCons)))
         -- pathTyp ← (pure (con Rpath args'))
         y ← getType Rpath
         y' ← rmPars d y
@@ -258,12 +261,18 @@ getMapConsTypeListInd R d Cref paths pars x y z = pure unknown
            do y'' ← (rmIndex indL y')
               ltm ← getTerm indTyp indRec zero args cons y''
               CpathTyp ← (pure (var RpathRef ltm))
-              pure (def (quote _↦_) (vArg (def indRec (vArg (def Rpath args') ∷ argCons)) ∷ vArg CpathTyp ∷ []))
+              case! (isDefinition indTyp) of λ
+               { true → pure (def (quote _↦_) (vArg (def indRec (vArg (con Rpath args') ∷ argCons)) ∷ vArg CpathTyp ∷ []))
+               ; false → pure (def (quote _↦_) (vArg (def indRec (vArg (def Rpath args') ∷ argCons)) ∷ vArg CpathTyp ∷ []))
+               }
          ; false →
            do y'' ← (rmIndex indL y')
               ltm ← getTerm indTyp indRec zero args cons y''
               CpathTyp ← (pure (var RpathRef ltm))
-              pure (def (quote _↦_) (vArg (def indRec (vArg (def Rpath args') ∷ argCons)) ∷ vArg CpathTyp ∷ []))
+              case! (isDefinition indTyp) of λ
+               { true → pure (def (quote _↦_) (vArg (def indRec (vArg (con Rpath args') ∷ argCons)) ∷ vArg CpathTyp ∷ []))
+               ; false → pure (def (quote _↦_) (vArg (def indRec (vArg (def Rpath args') ∷ argCons)) ∷ vArg CpathTyp ∷ []))
+               }
          }
    ; false →
      do

@@ -222,7 +222,7 @@ getMapConsTypeList R d Cref paths pars x y = pure unknown -- Invalid case
         argInfo' ← (getHidArgs' argInf)
         argArgs ← (generateRefTerm' argInfo' args)
         args' ← (pure ((argPars ++L argInds) ++L argArgs))
-        argIndRec ← (pure (def indRec (vArg (def Rpath []) ∷ argCons)))
+        -- argIndRec ← (pure (def indRec (vArg (def Rpath []) ∷ argCons)))
         pathTyp ← (pure (def Rpath args'))
         y ← getType Rpath
         y' ← rmPars d y
@@ -232,12 +232,18 @@ getMapConsTypeList R d Cref paths pars x y = pure unknown -- Invalid case
            do y'' ← (rmIndex indL y')
               ltm ← getTerm indTyp indRec zero args cons y''
               CpathTyp ← (pure (var RpathRef ltm))
-              pure (def (quote _↦_) (vArg (def indRec (vArg (def Rpath args') ∷ argCons)) ∷ vArg CpathTyp ∷ []))
+              case! (isDefinition indTyp) of λ
+               { true → pure (def (quote _↦_) (vArg (def indRec (vArg (con Rpath args') ∷ argCons)) ∷ vArg CpathTyp ∷ []))
+               ; false → pure (def (quote _↦_) (vArg (def indRec (vArg (def Rpath args') ∷ argCons)) ∷ vArg CpathTyp ∷ []))
+               }
          ; false →
            do y'' ← (rmIndex indL y')
               ltm ← getTerm indTyp indRec zero args cons y''
               CpathTyp ← (pure (var RpathRef ltm))
-              pure (def (quote _↦_) (vArg (def indRec (vArg (def Rpath args') ∷ argCons)) ∷ vArg CpathTyp ∷ []))
+              case! (isDefinition indTyp) of λ
+               { true → pure (def (quote _↦_) (vArg (def indRec (vArg (con Rpath args') ∷ argCons)) ∷ vArg CpathTyp ∷ []))
+               ; false → pure (def (quote _↦_) (vArg (def indRec (vArg (def Rpath args') ∷ argCons)) ∷ vArg CpathTyp ∷ []))
+               }
          }
    ; false →
      do

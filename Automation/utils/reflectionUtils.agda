@@ -66,6 +66,15 @@ getParameters d =
        where _ → pure 0
      pure n
 
+
+isDefinition : Name → TC Bool
+isDefinition d =
+  case! getDefinition d of λ
+   { (data-type _ cs) → pure true
+   ; (record-type c _) → pure true
+   ; _ → pure false
+   }
+
 {--
 map : ∀ {a b} {A : Set a} {B : Set b} → (A → B) → List A → List B
 map f []       = []
